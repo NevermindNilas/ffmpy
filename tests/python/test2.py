@@ -5,10 +5,12 @@ Should be useful inside Github Actions to keep track of the performance of the V
 
 import time
 import argparse
-import os
 import logging
 import requests
-import torch
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 import ffmpy
 
 from requests.exceptions import RequestException
@@ -50,7 +52,7 @@ def processVideoTorch(videoPath):
     try:
         frameCount = 0
         start = time.time()
-        with ffmpy.VideoReader(videoPath, as_numpy=False, d_type="uint8") as reader:
+        with ffmpy.VideoReader(videoPath, device = "cuda" , d_type="uint8") as reader:
             for frame in reader:
                 if frameCount == 0:
                     logging.info(
@@ -78,11 +80,12 @@ def processVideoNumPy(videoPath):
         start = time.time()
         # Hardcoded to as_numpy false until fixed
         # Until then, this still decodes on GPU
-        with ffmpy.VideoReader(videoPath, as_numpy=True, d_type="uint8") as reader:
+        with ffmpy.VideoReader(videoPath, device = "cpu", d_type="uint8") as reader:
             for frame in reader:
                 if frameCount == 0:
-                    logging.info(f"Frame data: {frame.shape, frame.dtype}")
+                    logging.info(f"Frame data: {frame.shape, frame.dtype, frame.device}")
                     # Just to make sure it's a numpy array
+                    frame.numpy()
                 frameCount += 1
         end = time.time()
         logging.info(f"Time taken: {end-start} seconds")
